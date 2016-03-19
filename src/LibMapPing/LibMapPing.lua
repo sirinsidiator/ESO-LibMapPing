@@ -83,6 +83,8 @@ local function HandleMapPingEventNotFired()
 		local pingTag = GetPingTagFromType(pingType)
 		HandleMapPing(0, pingEventType, pingType, pingTag, x, y, true)
 		lib.pendingPing[key] = nil
+		lib.mutePing[key] = 0
+		lib.suppressPing[key] = 0
 	end
 end
 
