@@ -174,13 +174,17 @@ end
 --- Returns the MapPingState for the pingType and pingTag.
 function lib:GetMapPingState(pingType, pingTag)
 	local key = GetKey(pingType, pingTag)
-	return lib.pingState[key] or lib.MAP_PING_NOT_SET
+	local state = lib.pingState[key]
+	if state == nil then
+		local x, y = lib:GetMapPing(pingType, pingTag)
+		state = (x ~= 0 or y ~= 0) and lib.MAP_PING_SET or lib.MAP_PING_NOT_SET
+		lib.pingState[key] = state
+	end
+	return lib.pingState[key]
 end
-
 --- Returns true if ping state is MAP_PING_SET_PENDING or MAP_PING_SET
 function lib:HasMapPing(pingType, pingTag)
-	local key = GetKey(pingType, pingTag)
-	local state = lib.pingState[key]
+	local state = lib:GetMapPingState(pingType, pingTag)
 	return state == lib.MAP_PING_SET_PENDING or state == lib.MAP_PING_SET
 end
 
