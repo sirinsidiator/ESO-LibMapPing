@@ -1,5 +1,5 @@
 local LIB_IDENTIFIER = "LibMapPing"
-local lib = LibStub and LibStub:NewLibrary(LIB_NAME, 999) -- only for test purposes. releases will get a smaller number
+local lib = LibStub and LibStub:NewLibrary(LIB_IDENTIFIER, 999) -- only for test purposes. releases will get a smaller number
 
 if LibStub and not lib then
     return -- already loaded and no upgrade necessary
