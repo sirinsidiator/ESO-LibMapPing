@@ -10,13 +10,7 @@ else
     end
 end
 
-local logger
-if(LibDebugLogger) then
-    logger = LibDebugLogger.Create(LIB_IDENTIFIER)
-else
-    local function noop() end
-    logger = setmetatable({}, { __index = function() return noop end })
-end
+local logger = LibDebugLogger(LIB_IDENTIFIER)
 
 -- emulate how the game calculates when a player should get kicked for sending too many pings and prevent it
 
