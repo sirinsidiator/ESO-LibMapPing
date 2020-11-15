@@ -197,10 +197,10 @@ end
 local function HandleMapPingEventNotFired()
     EVENT_MANAGER:UnregisterForUpdate(LIB_IDENTIFIER)
     for key, data in pairs(lib.pendingPing) do
-        local pingEventType, pingType, x, y, zoneIndex = unpack(data)
+        local pingEventType, pingType, x, y, mapId = unpack(data)
         local pingTag = GetPingTagFromType(pingType)
         -- The event is delayed and thus may not match the current map anymore.
-        if GetCurrentMapZoneIndex() ~= zoneIndex then
+        if GetCurrentMapId() ~= mapId then
             -- The coords do not match the current map. Do not draw a pin.
             lib:SuppressPing(pingType, pingTag) -- Will be set to zero afterwards, see below.
         end
@@ -222,7 +222,7 @@ local function CustomPingMap(pingType, mapType, x, y)
     if(pingType == MAP_PIN_TYPE_PLAYER_WAYPOINT or lib.bucket:Take()) then
         local key = GetKey(pingType)
         lib.pingState[key] = lib.MAP_PING_SET_PENDING
-        ResetEventWatchdog(key, PING_EVENT_ADDED, pingType, x, y, GetCurrentMapZoneIndex())
+        ResetEventWatchdog(key, PING_EVENT_ADDED, pingType, x, y, GetCurrentMapId())
         return originalPingMap(pingType, mapType, x, y)
     end
 end
@@ -261,7 +261,7 @@ end
 local function CustomRemovePlayerWaypoint()
     local key = GetKey(MAP_PIN_TYPE_PLAYER_WAYPOINT, MAP_PIN_TAG_PLAYER_WAYPOINT)
     lib.pingState[key] = lib.MAP_PING_NOT_SET_PENDING
-    ResetEventWatchdog(key, PING_EVENT_REMOVED, MAP_PIN_TYPE_PLAYER_WAYPOINT, 0, 0, GetCurrentMapZoneIndex())
+    ResetEventWatchdog(key, PING_EVENT_REMOVED, MAP_PIN_TYPE_PLAYER_WAYPOINT, 0, 0, GetCurrentMapId())
     return originalRemovePlayerWaypoint()
 end
 
