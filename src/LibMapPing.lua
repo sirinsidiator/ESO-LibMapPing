@@ -133,7 +133,7 @@ local MAP_PIN_TAG = {
     [MAP_PIN_TYPE_RALLY_POINT] = MAP_PIN_TAG_RALLY_POINT,
 }
 
-local originalPingMap, originalRemovePlayerWaypoint, originalRemoveRallyPoint
+local originalPingMap, originalRemovePlayerWaypoint, originalRemoveRallyPoint, originalSetPlayerWaypointByWorldLocation
 local GET_MAP_PING_FUNCTION = {} -- is initialized in Load()
 local REMOVE_MAP_PING_FUNCTION = {} -- also initialized in Load()
 
@@ -161,7 +161,6 @@ local function GetKey(pingType, pingTag)
 end
 
 -- TODO keep an eye on worldmap.lua for changes
--- TODO test if SetPlayerWaypointByWorldLocation does anything different
 local function HandleMapPing(eventCode, pingEventType, pingType, pingTag, x, y, isPingOwner)
     local key = GetKey(pingType, pingTag)
     local data = lib.pendingPing[key]
@@ -228,6 +227,16 @@ local function CustomPingMap(pingType, mapType, x, y)
     end
 end
 
+local function CustomSetPlayerWaypointByWorldLocation(worldX, worldY, worldZ)
+    local success = originalSetPlayerWaypointByWorldLocation(worldX, worldY, worldZ)
+    if success then
+        local key = GetKey(MAP_PIN_TYPE_PLAYER_WAYPOINT)
+        lib.pingState[key] = lib.MAP_PING_SET_PENDING
+        -- can't use a watchdog here, since we don't know where the ping would show
+    end
+    return success
+end
+
 local function CustomGetMapPlayerWaypoint()
     if(lib:IsPingSuppressed(MAP_PIN_TYPE_PLAYER_WAYPOINT, MAP_PIN_TAG_PLAYER_WAYPOINT)) then
         return 0, 0
@@ -268,12 +277,19 @@ local function CustomRemoveRallyPoint()
     originalRemoveRallyPoint()
 end
 
---- Wrapper for PingMap.
---- pingType is one of the three possible MapDisplayPinType for map pings (MAP_PIN_TYPE_PLAYER_WAYPOINT, MAP_PIN_TYPE_PING or MAP_PIN_TYPE_RALLY_POINT).
+--- Wrapper for PingMap and SetPlayerWaypointByWorldLocation.
+--- pingType is one of the three possible MapDisplayPinType for map pings (MAP_PIN_TYPE_PLAYER_WAYPOINT, MAP_PIN_TYPE_PING or MAP_PIN_TYPE_RALLY_POINT) or false.
+--- when pingType is set to false, the function calls SetPlayerWaypointByWorldLocation and the arguments will be the worldX, worldY and worldZ and the return a boolean success.
+--- for all other pingTypes nothing is returned and the arguments are as follows:
 --- mapType is usually MAP_TYPE_LOCATION_CENTERED.
 --- x and y are the normalized coordinates on the current map.
-function lib:SetMapPing(pingType, mapType, x, y)
-    PingMap(pingType, mapType, x, y)
+function lib:SetMapPing(pingType, mapTypeOrWorldX, xOrWorldY, yOrWorldZ)
+    if pingType == false then
+        local success = SetPlayerWaypointByWorldLocation(mapTypeOrWorldX, xOrWorldY, yOrWorldZ)
+        return success -- prevent Lua from eating the call on the stack
+    else
+        PingMap(pingType, mapTypeOrWorldX, xOrWorldY, yOrWorldZ)
+    end
 end
 
 --- Wrapper for the different ping removal functions.
@@ -419,6 +435,7 @@ local function Unload()
     EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_ADD_ON_LOADED)
     EVENT_MANAGER:UnregisterForEvent(LIB_IDENTIFIER, EVENT_MAP_PING)
     PingMap = originalPingMap
+    SetPlayerWaypointByWorldLocation = originalSetPlayerWaypointByWorldLocation
     GetMapPlayerWaypoint = GET_MAP_PING_FUNCTION[MAP_PIN_TYPE_PLAYER_WAYPOINT]
     GetMapPing = GET_MAP_PING_FUNCTION[MAP_PIN_TYPE_PING]
     GetMapRallyPoint = GET_MAP_PING_FUNCTION[MAP_PIN_TYPE_RALLY_POINT]
@@ -430,7 +447,9 @@ local function Load()
     InterceptMapPinManager()
 
     originalPingMap = PingMap
+    originalSetPlayerWaypointByWorldLocation = SetPlayerWaypointByWorldLocation
     PingMap = CustomPingMap
+    SetPlayerWaypointByWorldLocation = CustomSetPlayerWaypointByWorldLocation
 
     GET_MAP_PING_FUNCTION[MAP_PIN_TYPE_PLAYER_WAYPOINT] = GetMapPlayerWaypoint
     GET_MAP_PING_FUNCTION[MAP_PIN_TYPE_PING] = GetMapPing
