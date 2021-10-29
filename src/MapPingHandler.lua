@@ -75,6 +75,7 @@ function MapPingHandler:Initialize()
             internal.UnregisterForEvent(handle, EVENT_ADD_ON_LOADED)
             -- don't let worldmap do anything as we manage it instead
             internal.UnregisterForEvent("ZO_WorldMap", EVENT_MAP_PING)
+            WORLD_MAP_MANAGER.control:UnregisterForEvent(EVENT_MAP_PING)
             internal.RegisterForEvent(EVENT_MAP_PING, function(...)
                 self:HandleMapPing(...)
             end)
