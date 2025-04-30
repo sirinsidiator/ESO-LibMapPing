@@ -118,4 +118,7 @@ function lib:UnregisterCallback(eventName, callback)
     return internal:UnregisterCallback(eventName, callback)
 end
 
+--- expose the callback names for external use (defined in StartUp.lua)
+lib.callback = internal.callback
+
 internal:Initialize()
